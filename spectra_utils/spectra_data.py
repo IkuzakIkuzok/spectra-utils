@@ -341,6 +341,40 @@ class SpectraDataBase():
         new_data.comment = self.comment
         return new_data
 
+    def integrate(
+        self, wavelength_min: float | None = None,
+        wavelength_max: float | None = None
+    ) -> float:
+        """Integrates intensity data.
+
+        Args:
+            wavelength_min (float, optional):
+                The lower limit of the integration wavelength.
+                Defaults to None.
+            wavelength_max (float, optional):
+                The upper limit of the integration wavelength.
+                Defaults to None.
+
+        Returns:
+            float: Integrated intensity.
+        """
+        if wavelength_min is None:
+            wavelength_min = self.wavelength_min
+        if wavelength_max is None:
+            wavelength_max = self.wavelength_max
+
+        s = .0
+        for i, w in enumerate(self._wavelength[:-1]):
+            if w < wavelength_min:
+                continue
+            if w > wavelength_max:
+                break
+
+            s += (self._wavelength[i + 1] - w) * \
+                (self._intensity[i + 1] + self._intensity[i]) / 2
+
+        return s
+
 
 class NanoLog(SpectraDataBase):
     """NanoLog data class.
