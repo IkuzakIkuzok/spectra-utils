@@ -9,7 +9,7 @@ long_description = (this_directory / 'README.md').read_text()
 
 setup(
     name='spectra_utils',
-    version='0.0.1',
+    version='0.0.2',
     description='Spectra utils to process experimental data',
     long_description=long_description,
     long_description_content_type='text/markdown',

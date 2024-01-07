@@ -352,8 +352,6 @@ class NanoLog(SpectraDataBase):
         Args:
             filename (str): The path to the file.
         """
-        super().__init__(filename, encoding='utf-8')
-        self._parse_data()
 
     @overload
     def __init__(
@@ -366,7 +364,6 @@ class NanoLog(SpectraDataBase):
             wavelength (Wavelengths): The wavelength data.
             intensity (Intensities): The intensity data.
         """
-        super().__init__(wavelength, intensity)
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -392,8 +389,6 @@ class UH4150(SpectraDataBase):
         Args:
             filename (str): The path to the file.
         """
-        super().__init__(filename, encoding='utf-8')
-        self._parse_data()
 
     @overload
     def __init__(
@@ -406,11 +401,10 @@ class UH4150(SpectraDataBase):
             wavelength (Wavelengths): The wavelength data.
             intensity (Intensities): The intensity data.
         """
-        super().__init__(wavelength, intensity)
 
     def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
         self.unit: AbsorbanceUnit = 'Abs'  # pyright: ignore
+        super().__init__(*args, encoding='shift_jis', **kwargs)
 
     def _parse_data(self) -> None:
         """Parse data from file.
