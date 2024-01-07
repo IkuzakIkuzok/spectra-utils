@@ -1,6 +1,8 @@
 {
     "cSpell.words": [
         "concat",
-        "Horiba"
+        "Horiba",
+        "linalg",
+        "pinv"
     ]
 }

@@ -3,7 +3,7 @@
 
 from typing import Callable, List, Literal, Self, overload
 from math import ceil, floor, pi, sin
-from numpy import linspace, log10
+import numpy as np
 
 type Wavelengths = List[float]
 type Intensities = List[float]
@@ -11,6 +11,9 @@ type Gradient = (
     Literal['linear', 'step', 'sin']
     | Callable[[float, float, float], float]
     | None
+)
+type Smoothing = (
+    Literal['moving_average', 'sg']
 )
 type AbsorbanceUnit = (
     Literal['Abs', '%T', '%R']
@@ -217,10 +220,10 @@ class SpectraDataBase():
         right_u = floor(right.wavelength[-1] / step) * step + offset
 
         wl_left_new = list(
-            linspace(left_l, left_u, int((left_u - left_l) / step) + 1)
+            np.linspace(left_l, left_u, int((left_u - left_l) / step) + 1)
         )
         wl_right_new = list(
-            linspace(right_l, right_u, int((right_u - right_l) / step) + 1)
+            np.linspace(right_l, right_u, int((right_u - right_l) / step) + 1)
         )
         i_left_new = left.resample(wl_left_new).intensity
         i_right_new = right.resample(wl_right_new).intensity
@@ -230,7 +233,7 @@ class SpectraDataBase():
         n_overlap = int(overlap / step)
 
         length = int((right_u - left_l) / step) + 1
-        wavelengths = list(linspace(left_l, right_u, length))
+        wavelengths = list(np.linspace(left_l, right_u, length))
         intensities = [.0] * length
 
         def get_gradient_func() -> Callable[[float, float, float], float]:
@@ -340,6 +343,44 @@ class SpectraDataBase():
         new_data.filename = self.filename
         new_data.comment = self.comment
         return new_data
+
+    def smooth(
+        self, method: Smoothing = 'sg', window_length: int = 10, q: int = 5
+    ) -> Self:
+        """Smooths intensity data.
+
+        Args:
+            method (Smoothing, optional):
+                The smoothing method to use.
+                Defaults to 'sg'.
+            window_length (int, optional):
+                The window length of the smoothing.
+                Defaults to 10.
+            q (int, optional):
+                The order of the smoothing.
+                Defaults to 5.
+
+        Returns:
+            Self: Smoothed spectra data.
+        """
+        if method == 'moving_average':
+            self._intensity = np.convolve(
+                self._intensity, np.ones(window_length) / window_length, 'same'
+            )
+            return self
+        if method == 'sg':
+            wl_min, wl_max = self.wavelength_min, self.wavelength_max
+            wl = list(np.linspace(wl_min, wl_max, len(self)))
+            tmp = self.resample(wl)
+            dx = wl[1] - wl[0]
+            x = (np.c_[-window_length:window_length+1] * dx) ** np.r_[:q+1]
+            c = np.linalg.pinv(x)
+            self._wavelength = tmp.wavelength[window_length:-window_length]
+            self._intensity = np.convolve(
+                tmp.intensity[::-1], c[0], 'valid'
+            )[::-1]
+            return self
+        raise ValueError('Unknown smoothing method')
 
     def integrate(
         self, wavelength_min: float | None = None,
@@ -465,7 +506,7 @@ class UH4150(SpectraDataBase):
         """
         if self.unit == 'Abs':
             return self._intensity
-        return [-log10(i / 100) for i in self._intensity]
+        return [-np.log10(i / 100) for i in self._intensity]
 
     def transmittance(self) -> Intensities:
         """Gets transmittance data.
