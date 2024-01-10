@@ -15,6 +15,7 @@ setup(
     long_description_content_type='text/markdown',
     author='Kazuki Kohzuki',
     packages=find_packages(),
+    include_package_data=True,
     license='MIT',
     install_requires=[
         'numpy',
