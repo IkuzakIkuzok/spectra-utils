@@ -6,6 +6,7 @@ from math import ceil, floor, pi, sin
 import numpy as np
 
 type Wavelengths = List[float]
+type Energies = List[float]
 type Intensities = List[float]
 type Gradient = (
     Literal['linear', 'step', 'sin']
@@ -23,6 +24,9 @@ type AbsorbanceUnit = (
 class SpectraDataBase():
     """Base class for spectra data.
     """
+
+    WAVELENGTH_TO_ENERGY = 1239.841984  # eV * nm
+
     @overload
     def __init__(self, filename: str, encoding: str = 'utf-8') -> None:
         """Initializes a new instance of the SpectraDataBase class.
@@ -152,6 +156,12 @@ class SpectraDataBase():
         return self._wavelength
 
     @property
+    def energy(self) -> Energies:
+        """Gets energy data.
+        """
+        return [self.WAVELENGTH_TO_ENERGY / w for w in self._wavelength]
+
+    @property
     def intensity(self) -> Intensities:
         """Gets intensity data.
         """
@@ -174,6 +184,18 @@ class SpectraDataBase():
         """Gets max wavelength.
         """
         return max(self._wavelength)
+
+    @property
+    def energy_min(self) -> float:
+        """Gets min energy.
+        """
+        return self.WAVELENGTH_TO_ENERGY / self.wavelength_max
+
+    @property
+    def energy_max(self) -> float:
+        """Gets max energy.
+        """
+        return self.WAVELENGTH_TO_ENERGY / self.wavelength_min
 
     def normalize(self, denominator: float | None = None) -> Self:
         """Normalizes intensity data.
@@ -364,9 +386,9 @@ class SpectraDataBase():
             Self: Smoothed spectra data.
         """
         if method == 'moving_average':
-            self._intensity = np.convolve(
+            self._intensity = [float(f) for f in np.convolve(
                 self._intensity, np.ones(window_length) / window_length, 'same'
-            )
+            )]
             return self
         if method == 'sg':
             wl_min, wl_max = self.wavelength_min, self.wavelength_max
@@ -399,20 +421,22 @@ class SpectraDataBase():
         Returns:
             float: Integrated intensity.
         """
-        if wavelength_min is None:
-            wavelength_min = self.wavelength_min
-        if wavelength_max is None:
-            wavelength_max = self.wavelength_max
+        e_min = self.WAVELENGTH_TO_ENERGY / wavelength_min \
+            if wavelength_min else self.energy_min
+        e_max = self.WAVELENGTH_TO_ENERGY / wavelength_max \
+            if wavelength_max else self.energy_max
+
+        energy = self.energy
 
         s = .0
-        for i, w in enumerate(self._wavelength[:-1]):
-            if w < wavelength_min:
+        for i, e in enumerate(energy[:-1]):
+            if e < e_min:
                 continue
-            if w > wavelength_max:
+            if e > e_max:
                 break
 
-            s += (self._wavelength[i + 1] - w) * \
-                (self._intensity[i + 1] + self._intensity[i]) / 2
+            s += (energy[i + 1] - energy[i]) * \
+                (self._intensity[i] + self._intensity[i + 1]) / 2
 
         return s
 
