@@ -1,8 +1,10 @@
 """Init file for spectra_utils package.
 """
 
-from .spectra_data import NanoLog, UH4150, ECT250D
+from .absorption import UH4150
+from .emission import NanoLog
+from .photovoltaics import ECT250D
 
 __all__ = [
-    'NanoLog', 'UH4150', 'ECT250D'
+    'UH4150', 'NanoLog', 'ECT250D'
 ]
