@@ -121,6 +121,90 @@ class SpectraDataBase():
     def __iter__(self):
         return iter(zip(self._wavelength, self._intensity))
 
+    def __abs__(self) -> Self:
+        return self.__class__(
+            self.wavelength,
+            [abs(i) for i in self.intensity]
+        )
+
+    def __add__(self, other: Self) -> Self:
+        assert isinstance(other, self.__class__)
+        assert self.wavelength == other.wavelength
+        return self.__class__(
+            self.wavelength,
+            [i1 + i2 for i1, i2 in zip(self.intensity, other.intensity)]
+        )
+
+    def __iadd__(self, other: Self) -> Self:
+        assert isinstance(other, self.__class__)
+        assert self.wavelength == other.wavelength
+        self._intensity = [
+            i1 + i2 for i1, i2 in zip(self.intensity, other.intensity)
+        ]
+        return self
+
+    def __sub__(self, other: Self) -> Self:
+        assert isinstance(other, self.__class__)
+        assert self.wavelength == other.wavelength
+        return self.__class__(
+            self.wavelength,
+            [i1 - i2 for i1, i2 in zip(self.intensity, other.intensity)]
+        )
+
+    def __isub__(self, other: Self) -> Self:
+        assert isinstance(other, self.__class__)
+        assert self.wavelength == other.wavelength
+        self._intensity = [
+            i1 - i2 for i1, i2 in zip(self.intensity, other.intensity)
+        ]
+        return self
+
+    def __mul__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        return self.__class__(
+            self.wavelength,
+            [i * other for i in self.intensity]
+        )
+
+    def __imul__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        self._intensity = [i * other for i in self.intensity]
+        return self
+
+    def __truediv__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        return self.__class__(
+            self.wavelength,
+            [i / other for i in self.intensity]
+        )
+
+    def __itruediv__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        self._intensity = [i / other for i in self.intensity]
+        return self
+
+    def __floordiv__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        return self.__class__(
+            self.wavelength,
+            [i // other for i in self.intensity]
+        )
+
+    def __ifloordiv__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        self._intensity = [i // other for i in self.intensity]
+        return self
+
+    def __eq__(self, other: Self):
+        assert isinstance(other, self.__class__)
+        return self.wavelength == other.wavelength \
+            and self.intensity == other.intensity
+
+    def __ne__(self, other: Self):
+        assert isinstance(other, self.__class__)
+        return self.wavelength != other.wavelength \
+            or self.intensity != other.intensity
+
     @overload
     def __getitem__(self, key: float) -> float:
         return .0
