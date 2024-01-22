@@ -51,8 +51,8 @@ class UH4150(SpectraDataBase):
                 raise ValueError('Unknown unit')
             self.unit: AbsorbanceUnit = u  # pyright: ignore
             data = lines[i + 1:-1]
-            self._wavelength = [float(d[0].strip()) for d in data]
-            self._intensity = [float(d[1].strip()) for d in data]
+            self._wavelength = [float(d[0].strip()) for d in data[::-1]]
+            self._intensity = [float(d[1].strip()) for d in data[::-1]]
             break
 
     def __str__(self) -> str:
