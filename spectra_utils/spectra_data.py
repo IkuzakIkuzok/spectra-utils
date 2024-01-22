@@ -5,9 +5,6 @@ from typing import Callable, List, Literal, Self, overload
 from math import ceil, floor, pi, sin
 import numpy as np
 
-from .lazy import InitOnAccess
-from .solar import SolarSpectra, SpectrumType
-
 
 type Wavelengths = List[float]
 type Energies = List[float]
@@ -19,9 +16,6 @@ type Gradient = (
 )
 type Smoothing = (
     Literal['moving_average', 'sg']
-)
-type AbsorbanceUnit = (
-    Literal['Abs', '%T', '%R']
 )
 
 
@@ -126,6 +120,90 @@ class SpectraDataBase():
 
     def __iter__(self):
         return iter(zip(self._wavelength, self._intensity))
+
+    def __abs__(self) -> Self:
+        return self.__class__(
+            self.wavelength,
+            [abs(i) for i in self.intensity]
+        )
+
+    def __add__(self, other: Self) -> Self:
+        assert isinstance(other, self.__class__)
+        assert self.wavelength == other.wavelength
+        return self.__class__(
+            self.wavelength,
+            [i1 + i2 for i1, i2 in zip(self.intensity, other.intensity)]
+        )
+
+    def __iadd__(self, other: Self) -> Self:
+        assert isinstance(other, self.__class__)
+        assert self.wavelength == other.wavelength
+        self._intensity = [
+            i1 + i2 for i1, i2 in zip(self.intensity, other.intensity)
+        ]
+        return self
+
+    def __sub__(self, other: Self) -> Self:
+        assert isinstance(other, self.__class__)
+        assert self.wavelength == other.wavelength
+        return self.__class__(
+            self.wavelength,
+            [i1 - i2 for i1, i2 in zip(self.intensity, other.intensity)]
+        )
+
+    def __isub__(self, other: Self) -> Self:
+        assert isinstance(other, self.__class__)
+        assert self.wavelength == other.wavelength
+        self._intensity = [
+            i1 - i2 for i1, i2 in zip(self.intensity, other.intensity)
+        ]
+        return self
+
+    def __mul__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        return self.__class__(
+            self.wavelength,
+            [i * other for i in self.intensity]
+        )
+
+    def __imul__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        self._intensity = [i * other for i in self.intensity]
+        return self
+
+    def __truediv__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        return self.__class__(
+            self.wavelength,
+            [i / other for i in self.intensity]
+        )
+
+    def __itruediv__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        self._intensity = [i / other for i in self.intensity]
+        return self
+
+    def __floordiv__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        return self.__class__(
+            self.wavelength,
+            [i // other for i in self.intensity]
+        )
+
+    def __ifloordiv__(self, other: float) -> Self:
+        assert isinstance(other, float)
+        self._intensity = [i // other for i in self.intensity]
+        return self
+
+    def __eq__(self, other: Self):
+        assert isinstance(other, self.__class__)
+        return self.wavelength == other.wavelength \
+            and self.intensity == other.intensity
+
+    def __ne__(self, other: Self):
+        assert isinstance(other, self.__class__)
+        return self.wavelength != other.wavelength \
+            or self.intensity != other.intensity
 
     @overload
     def __getitem__(self, key: float) -> float:
@@ -441,188 +519,5 @@ class SpectraDataBase():
 
             s += (energy[i + 1] - energy[i]) * \
                 (self._intensity[i] + self._intensity[i + 1]) / 2
-
-        return s
-
-
-class NanoLog(SpectraDataBase):
-    """NanoLog data class.
-    """
-    @overload
-    def __init__(self, filename: str) -> None:
-        """Initializes a new instance of the NanoLog class from file.
-
-        Args:
-            filename (str): The path to the file.
-        """
-
-    @overload
-    def __init__(
-        self, wavelength: Wavelengths, intensity: Intensities
-    ) -> None:
-        """Initializes a new instance of the NanoLog class
-        from wavelength and intensity data.
-
-        Args:
-            wavelength (Wavelengths): The wavelength data.
-            intensity (Intensities): The intensity data.
-        """
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-
-    def _parse_data(self) -> None:
-        """Parse data from file.
-        """
-        data = list(zip(*[d.split('\t') for d in self._data[2:]]))
-        self._wavelength = [float(d) for d in data[0]]
-        self._intensity = [float(d) for d in data[1]]
-
-    def __str__(self) -> str:
-        return f'Emission data ({self.wavelength_min} - {self.wavelength_max})'
-
-
-class UH4150(SpectraDataBase):
-    """UH4150 data class.
-    """
-    @overload
-    def __init__(self, filename: str) -> None:
-        """Initializes a new instance of the UH4150 class from file.
-
-        Args:
-            filename (str): The path to the file.
-        """
-
-    @overload
-    def __init__(
-        self, wavelength: Wavelengths, intensity: Intensities
-    ) -> None:
-        """Initializes a new instance of the UH4150 class
-        from wavelength and intensity data.
-
-        Args:
-            wavelength (Wavelengths): The wavelength data.
-            intensity (Intensities): The intensity data.
-        """
-
-    def __init__(self, *args, **kwargs) -> None:
-        self.unit: AbsorbanceUnit = 'Abs'  # pyright: ignore
-        super().__init__(*args, encoding='shift_jis', **kwargs)
-
-    def _parse_data(self) -> None:
-        """Parse data from file.
-        """
-        lines = list(map(lambda x: x.split('\t'), self._data))
-        for i, line in enumerate(lines):
-            if not line[0] == 'nm':
-                continue
-            u = line[1].strip()
-            if u not in ['Abs', '%T', '%R']:
-                raise ValueError('Unknown unit')
-            self.unit: AbsorbanceUnit = u  # pyright: ignore
-            data = lines[i + 1:-1]
-            self._wavelength = [float(d[0].strip()) for d in data]
-            self._intensity = [float(d[1].strip()) for d in data]
-            break
-
-    def __str__(self) -> str:
-        return \
-            f'Absorbance data ({self.wavelength_min} - {self.wavelength_max})'
-
-    def absorbance(self) -> Intensities:
-        """Gets absorbance data.
-        """
-        if self.unit == 'Abs':
-            return self._intensity
-        return [-np.log10(i / 100) for i in self._intensity]
-
-    def transmittance(self) -> Intensities:
-        """Gets transmittance data.
-        """
-        if self.unit == '%T':
-            return self._intensity
-        return [10 ** (-i) for i in self._intensity]
-
-
-class ECT250D(SpectraDataBase):
-    """ECT250D data class.
-    """
-
-    _am0: SolarSpectra = InitOnAccess(SolarSpectra, 'AM0')
-    _am15g: SolarSpectra = InitOnAccess(SolarSpectra, 'AM1.5G')
-    _am15d: SolarSpectra = InitOnAccess(SolarSpectra, 'AM1.5D')
-
-    @overload
-    def __init__(self, filename: str) -> None:
-        """Initializes a new instance of the ECT250D class from file.
-
-        Args:
-            filename (str): The path to the file.
-        """
-
-    @overload
-    def __init__(
-        self, wavelength: Wavelengths, intensity: Intensities
-    ) -> None:
-        """Initializes a new instance of the ECT250D class
-        from wavelength and intensity data.
-
-        Args:
-            wavelength (Wavelengths): The wavelength data.
-            intensity (Intensities): The intensity data.
-        """
-
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, encoding='shift_jis', **kwargs)
-
-    def _parse_data(self) -> None:
-        """Parse data from file.
-        """
-        lines = list(map(lambda x: x.split(','), self._data[24:]))
-        self._wavelength = [float(d[0].strip()) for d in lines]
-        self._intensity = [float(d[-1].strip()) for d in lines]
-
-    def __str__(self) -> str:
-        return \
-            f'EQE data ({self.wavelength_min} - {self.wavelength_max})'
-
-    def j_sc(self, am: SpectrumType = 'AM1.5G') -> List[float]:
-        """Calculates short-circuit current density from EQE spectrum.
-
-        Args:
-            am (SpectrumType, optional):
-                The spectrum type to use.
-                Defaults to 'AM1.5G'.
-
-        Returns:
-            List[float]: Short-circuit current density.
-        """
-        sun = {
-            'AM0': self._am0,
-            'AM1.5G': self._am15g,
-            'AM1.5D': self._am15d
-        }[am]
-
-        step = self.wavelength[1] - self.wavelength[0]
-        w = int(step * 2)
-
-        move_mean_sun = np.convolve(
-            sun.irradiance, np.ones(w) / w, 'same'
-        )
-        std_sun = [
-            s / 1e4 * 1e3
-            for w, s in zip(sun.wavelength, move_mean_sun)
-            if w in self.wavelength
-        ]
-
-        j = [i * s / 100 for i, s in zip(self._intensity, std_sun)]
-        s = [.0] * len(j)
-        s[0] = j[0] * self.wavelength[0] / self.WAVELENGTH_TO_ENERGY
-        for i in range(1, len(j)):
-            x2 = self.wavelength[i]
-            x1 = self.wavelength[i - 1]
-            y2 = j[i] * x2 / self.WAVELENGTH_TO_ENERGY
-            y1 = j[i - 1] * x1 / self.WAVELENGTH_TO_ENERGY
-            s[i] = s[i - 1] + (x2 - x1) * (y2 + y1) / 2
 
         return s
