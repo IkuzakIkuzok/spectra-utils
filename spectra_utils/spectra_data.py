@@ -1,6 +1,7 @@
 """Spectra data module.
 """
 
+from io import TextIOWrapper
 from typing import Callable, List, Literal, Self, overload
 from math import ceil, floor, pi, sin
 import numpy as np
@@ -195,12 +196,12 @@ class SpectraDataBase():
         self._intensity = [i // other for i in self.intensity]
         return self
 
-    def __eq__(self, other: Self):
+    def __eq__(self, other: object):
         assert isinstance(other, self.__class__)
         return self.wavelength == other.wavelength \
             and self.intensity == other.intensity
 
-    def __ne__(self, other: Self):
+    def __ne__(self, other: object):
         assert isinstance(other, self.__class__)
         return self.wavelength != other.wavelength \
             or self.intensity != other.intensity
@@ -521,3 +522,18 @@ class SpectraDataBase():
                 (self._intensity[i] + self._intensity[i + 1]) / 2
 
         return s
+
+    def save(
+        self, stream: TextIOWrapper,
+        delimiter: str = ',', newline: str = '\n'
+    ):
+        """Save data to file.
+
+        Args:
+            stream (TextIOWrapper): Stream to write.
+            delimiter (str, optional): Delimiter of the data. Defaults to ','.
+            newline (str, optional): Newline character. Defaults to '\n'.
+        """
+        stream.write(f'Wavelength{delimiter}Intensity{newline}')
+        for w, i in zip(self._wavelength, self._intensity):
+            stream.write(f'{w}{delimiter}{i}{newline}')
