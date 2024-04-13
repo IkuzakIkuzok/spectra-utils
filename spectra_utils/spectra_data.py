@@ -171,26 +171,22 @@ class SpectraDataBase():
         return self
 
     def __truediv__(self, other: float | int) -> Self:
-        assert isinstance(other, float)
         return self.__class__(
             self.wavelength,
             [i / other for i in self.intensity]
         )
 
     def __itruediv__(self, other: float | int) -> Self:
-        assert isinstance(other, float)
         self._intensity = [i / other for i in self.intensity]
         return self
 
     def __floordiv__(self, other: float | int) -> Self:
-        assert isinstance(other, float)
         return self.__class__(
             self.wavelength,
             [i // other for i in self.intensity]
         )
 
     def __ifloordiv__(self, other: float | int) -> Self:
-        assert isinstance(other, float)
         self._intensity = [i // other for i in self.intensity]
         return self
 
