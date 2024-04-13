@@ -144,6 +144,11 @@ class SpectraDataBase():
         ]
         return self
 
+    def __radd__(self, other: int) -> Self:
+        # this is for sum() function
+        assert other == 0
+        return self
+
     def __sub__(self, other: Self) -> Self:
         assert isinstance(other, self.__class__)
         assert self.wavelength == other.wavelength
@@ -160,39 +165,33 @@ class SpectraDataBase():
         ]
         return self
 
-    def __mul__(self, other: float) -> Self:
-        assert isinstance(other, float)
+    def __mul__(self, other: float | int) -> Self:
         return self.__class__(
             self.wavelength,
             [i * other for i in self.intensity]
         )
 
-    def __imul__(self, other: float) -> Self:
-        assert isinstance(other, float)
+    def __imul__(self, other: float | int) -> Self:
         self._intensity = [i * other for i in self.intensity]
         return self
 
-    def __truediv__(self, other: float) -> Self:
-        assert isinstance(other, float)
+    def __truediv__(self, other: float | int) -> Self:
         return self.__class__(
             self.wavelength,
             [i / other for i in self.intensity]
         )
 
-    def __itruediv__(self, other: float) -> Self:
-        assert isinstance(other, float)
+    def __itruediv__(self, other: float | int) -> Self:
         self._intensity = [i / other for i in self.intensity]
         return self
 
-    def __floordiv__(self, other: float) -> Self:
-        assert isinstance(other, float)
+    def __floordiv__(self, other: float | int) -> Self:
         return self.__class__(
             self.wavelength,
             [i // other for i in self.intensity]
         )
 
-    def __ifloordiv__(self, other: float) -> Self:
-        assert isinstance(other, float)
+    def __ifloordiv__(self, other: float | int) -> Self:
         self._intensity = [i // other for i in self.intensity]
         return self
 
