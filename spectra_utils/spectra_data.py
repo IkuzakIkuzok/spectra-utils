@@ -144,6 +144,11 @@ class SpectraDataBase():
         ]
         return self
 
+    def __radd__(self, other: int) -> Self:
+        # this is for sum() function
+        assert other == 0
+        return self
+
     def __sub__(self, other: Self) -> Self:
         assert isinstance(other, self.__class__)
         assert self.wavelength == other.wavelength
